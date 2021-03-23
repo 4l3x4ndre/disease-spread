@@ -57,8 +57,6 @@ if not video_capture.isOpened():
 # Alexandre: Current people seen
 session = Session()
 
-# ---------------------
-# ------------------------------
 
 def main():
     while True:
