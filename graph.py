@@ -1,20 +1,18 @@
-class Graph:
+class Graphe_mat:
 
-    def __init__(self):
-        self.gdict = {}
+    def __init__(self, n):
+        self.n = n
+        self.mat = [[False] * n for _ in range(n)]
 
-    def add_vertices(self, i):
-        if i not in self.gdict:
-            self.gdict[i] = set()
+    def add_edge(self, s1, s2):
+        self.mat[s1][s2] = True
 
-    def add_edges(self, v1, v2):
-        self.add_edges(v1)
-        self.add_edges(v2)
-        self.gdict[v1].add(v2)
+    def edge(self, s1, s2):
+        return self.mat[s1][s2]
 
-    def remove_edges(self, v1, v2):
-        if v1 in self.gdict and v2 in self.gdict[v1]:
-            self.gdict[v1].remove(v2)
-
-    def vertices_from(self, e):
-        return self.gdict[e]
+    def neighbors(self, s):
+        v = []
+        for i in range(self.n):
+            if self.mat[s][i]:
+                v.append(i)
+        return v
