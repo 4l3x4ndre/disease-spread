@@ -10,7 +10,7 @@ class Graphe_mat:
     def edge(self, s1, s2):
         return self.mat[s1][s2]
 
-    def neighbors(self, s):
+    def neighbougrs(self, s):
         v = []
         for i in range(self.n):
             if self.mat[s][i]:
