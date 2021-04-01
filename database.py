@@ -5,8 +5,8 @@ from sqlite3 import Error
 
 class Database:
 
-    def __init__(self, file_name):
-        self.database = str(pathlib.Path().absolute()) + r"\data" + '\\' + file_name + '.db'
+    def __init__(self, file_name, separator):
+        self.database = str(pathlib.Path().absolute()) + separator + "data" + separator + file_name + '.db'
         self.file_name = file_name
         self.conn = self.create_connection()
 
@@ -32,8 +32,13 @@ class Database:
 
         rows = cur.fetchall()
 
-        for row in rows:
-            print(row)
+        return rows
+
+    def select_status(self, name):
+        cur = self.conn.cursor()
+        cur.execute("SELECT status FROM " + self.file_name + "WHERE field1=" + name)
+        result = cur.fetchall()
+        return result
 
     def delete_item(self, item_value, field):
         """
@@ -46,14 +51,15 @@ class Database:
         cur.execute(sql, (item_value,))
         self.conn.commit()
 
-
-def main():
-
-    database = Database('trump_edges')
-    database.select_item()
-    database2 = Database('trump_vertices')
-    database2.select_item()
-
-
-if __name__ == '__main__':
-    main()
+    def change_status(self, name, value):
+        """
+        Update the "status" field of item with a name parameter
+        :param name: identifier
+        :param value: status value
+        """
+        sql = '''UPDATE vertices
+                      SET status = ?
+                      WHERE name = ?'''
+        cur = self.conn.cursor()
+        cur.execute(sql, (value, name))
+        self.conn.commit()
