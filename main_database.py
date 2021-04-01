@@ -13,6 +13,10 @@ def create_graph(database_vertices, database_edges):
 
 
 def main():
+
+    # WARNING :
+    # On windows please use a \
+    # On Linux please use a /
     database_vertices = db.Database('trump_vertices', '/')
     database_edge = db.Database('trump_edges', '/')
 
