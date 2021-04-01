@@ -11,7 +11,7 @@ class Graphe_mat:
     def edge(self, s1, s2):
         return self.mat[s1][s2]
 
-    def neighbogrs(self, s):
+    def neighbougrs(self, s):
         v = []
         for i in range(self.n):
             if self.mat[s][i]:
@@ -19,74 +19,53 @@ class Graphe_mat:
         return v
 
 
-
-class Queue:
-    """Structure de file"""
-
-    def __init__(self):
-        self.tete = None
-        self.queue = None
-
-    def is_empty(self):
-        " Une file est vide lorsque la tete vaut None"
-        return self.tete is None
-
-    def onqueue(self, x):
-        """ Ajout d'un élément à l'arrière de la file
-            Attention à gêrer le cas particulier où la file est vide
-        """
-        c = Cellule(x, None)
-        if self.est_vide():
-            self.tete = c
-        else:
-            self.queue.suivante = c
-        self.queue = c
-
-    def enqueue(self):
-        """ Supprime et renvoie le premier élément de la liste
-            Attention à gêrer le cas particulier où la file a un unique élément"""
-        if self.est_vide():
-            raise IndexError("retirer sur une fille vide")
-        v = self.tete.valeur
-        self.tete = self.tete.suivante
-        if self.tete is None:
-            self.queue = None
-        return v
-
-
 class Graph_dic:
-    """ Un graphe comme dictionnaire d'adjacence"""
 
     def __init__(self):
-        self.adj = {}
+        self.dic = {}
 
-    def add_vertice(self, s):
-        if s not in self.adj:
-            self.adj[s] = []
+    def add_vertice(self, v):
+        if v not in self.dic:
+            self.dic[v] = []
 
-    def add_edge(self, s1, s2):
-        self.ajouter_sommet(s1)
-        if s2 not in self.adj[s1]:
-            self.ajouter_sommet(s2)
-            self.adj[s1].append(s2)
+    def add_edge(self, v1, v2):
+        self.add_vertice(v1)
+        if v2 not in self.dic[v1]:
+            self.add_vertice(v2)
+            self.dic[v1].append(v2)
+            self.dic[v2].append(v1)
 
-    def edge(self, s1, s2):
-        return s2 in self.adj[s1]
+    def edge(self, v1, v2):
+        return v2 in self.dic[v1]
 
     def vertice(self):
-        return list(self.adj)
+        return list(self.dic)
 
-    def neighbors(self, s):
-        return self.adj[s]
+    def neighbors(self, v):
+        return self.dic[v]
+
+def width_course(graph):
+    """width course = parcous en largeur en français"""
+    queue = Queue()
+    queue.onqueue(graph)
+    saw = []
+    for n in graph.neighbors():
+        v = queue.enqueue()
+        if v not in saw:
+            saw.append(v)
+            for n2 in v.neighbors():
+                queue.onqueue(n2)
+    return saw
+
+def change_status(L):
+    """"change people's status of the database to not sick to sick"""
+    for i in L :
 
 
-def parcours_largeur(s):
-    file = File()
-    file.enfiler(s)
-    vus = []
-    for v in s.neighbors():
-        file.enfiler(v)
-        if v not in vus:
-            vus.append(v)
-            for
+
+
+
+
+
+
 
