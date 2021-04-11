@@ -37,7 +37,6 @@ class Database:
     def select_status(self, name):
         cur = self.conn.cursor()
         sql = '''SELECT status FROM vertices WHERE name=?'''
-        #cur.execute("SELECT status FROM " + self.file_name + "WHERE name=?", (name,))
         cur.execute(sql, (name,))
         result = cur.fetchall()
         return result
