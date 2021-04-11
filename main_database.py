@@ -23,7 +23,8 @@ def main():
     g = create_graph(database_vertices, database_edge)
     database_vertices.change_status('Paul Teller', 1)
     print(
-        g.neighbors('Christopher Ruddy')
+        g.neighbors('Christopher Ruddy'),
+        database_vertices.select_status('Paul Teller')
     )
 
 
