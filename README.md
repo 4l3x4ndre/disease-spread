@@ -17,6 +17,10 @@ To use other databases, make sure:
 - the vertices db use at least columns `id` and `name`, and `status` if needed,
 - the edges db use at least columns `fiedl1` and `field2`.
 
+## Screenshot
+
+![screenshot with got db](https://github.com/4l3x4ndre/disease-spread/screenshot.png)
+
 ## Credits
 
 Databases are based on the repository [sample-social-network-datasets](https://github.com/melaniewalsh/sample-social-network-datasets) from Melanie Walsh.
