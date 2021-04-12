@@ -17,11 +17,8 @@ def main():
     database_edge = db.Database('trump_edges')
 
     g = create_graph(database_vertices, database_edge)
-    database_vertices.change_status('Paul Teller', 1)
-    print(
-        g.neighbors('Christopher Ruddy'),
-        database_vertices.select_status('Paul Teller')
-    )
+    # database_vertices.change_status('Paul Teller', 1)
+    # print(g.neighbors('Christopher Ruddy'),database_vertices.select_status('Paul Teller'))
 
 
 if __name__ == '__main__':

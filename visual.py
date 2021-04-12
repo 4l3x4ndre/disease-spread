@@ -34,7 +34,6 @@ class State:
         """
         # Change the color, status, ...
         for node_checked in self.spread_attributes['q']:
-            print('checking', node_checked)
             for i in range(len(list(self.g_nx.nodes))):
                 node_nx = list(self.g_nx.nodes)[i]
                 if node_checked == node_nx:
@@ -63,9 +62,7 @@ class State:
         Continue the spread.
         """
         self.index += 1
-        print(self.index)
-
-
+        print('step number', self.index)
 
         # Contiunue the spread
         self.spread_attributes = self.spread(
@@ -75,12 +72,6 @@ class State:
                 self.spread_attributes['q'],
                 self.spread_attributes['c']
         ) 
-
-
-        print('checked', self.spread_attributes['c'])
-        print()
-        print('queued', self.spread_attributes['q'])
-
 
         self.draw()
 
