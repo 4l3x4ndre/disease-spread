@@ -8,9 +8,11 @@ import numpy as np
 
 
 class State:
-    def __init__(self, g_nx):
+    def __init__(self, g, g_nx, spread_func, root):
         self.index = 0
+        self.g = g
         self.g_nx = g_nx
+        self.root = root
 
         # Positions of the nodes to keep them in the same place and not
         # redraw completely the graph
@@ -19,6 +21,10 @@ class State:
         # Keep track of graph colors
         self.colors = ['#35FFAD' for i in range(self.g_nx.number_of_nodes())]
 
+        # Spread function to create a step by step spread
+        self.spread = spread_func
+        self.spread_attributes = {'g':g, 'id':0, 'r':root, 'q':[root], 'c':[]}
+
         # Drawing
         self.draw()
 
@@ -26,13 +32,17 @@ class State:
         """
         Draw the graph with the positions stored.
         """
-
         # Change the color, status, ...
-        self.colors[self.index] = '#FF4348'
+        for node_checked in self.spread_attributes['q']:
+            print('checking', node_checked)
+            for i in range(len(list(self.g_nx.nodes))):
+                node_nx = list(self.g_nx.nodes)[i]
+                if node_checked == node_nx:
+                    self.colors[i] = '#FF4348'
+                    break
 
         # Clear the figure
         plt.clf()
-
 
         # Draw the networkx graph with the same position
         nx.draw(self.g_nx, cmap = plt.get_cmap('jet'), node_color = self.colors, with_labels=True, pos=self.pos, edge_color='#BABBC1')
@@ -54,10 +64,28 @@ class State:
         """
         self.index += 1
         print(self.index)
+
+
+
+        # Contiunue the spread
+        self.spread_attributes = self.spread(
+                self.spread_attributes['g'],
+                self.spread_attributes['id'],
+                self.spread_attributes['r'],
+                self.spread_attributes['q'],
+                self.spread_attributes['c']
+        ) 
+
+
+        print('checked', self.spread_attributes['c'])
+        print()
+        print('queued', self.spread_attributes['q'])
+
+
         self.draw()
 
 
-def draw(g):
+def show_graph(g, spread_func, root):
 
     
     # Networkx Graph setup
@@ -75,7 +103,7 @@ def draw(g):
     fig = plt.figure(figsize=(20, 10), edgecolor='y')
     
     # Creating an instance of State to keep track of the state of the graph
-    state = State(g_nx)
+    state = State(g, g_nx, spread_func, root)
 
     
 
