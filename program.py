@@ -47,13 +47,13 @@ def breadth_first_search_step_by_step(g, step_id, root, queue=[], checked=[]):
 
 
 def main():
-    vert_db = db.Database('marvel_vertices')
-    edges_db = db.Database('marvel_edges')
+    vert_db = db.Database('got_vertices')
+    edges_db = db.Database('got_edges')
 
     g = create_graph(vert_db, edges_db)
     #path = breadth_first_search(g, 'Donald J. Trump')
 
-    root = 'Deadpool / Jack / Wade W'
+    root = 'Aemon'
     gui.show_graph(g, breadth_first_search_step_by_step, root)
 
 
