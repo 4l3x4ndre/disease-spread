@@ -38,8 +38,11 @@ class Graph_dic:
     def edge(self, v1, v2):
         return v2 in self.dic[v1]
 
-    def vertice(self):
+    def vertices(self):
         return list(self.dic)
 
     def neighbors(self, v):
         return self.dic[v]
+
+    def nb_neighbors(self):
+        return len(self.dic)

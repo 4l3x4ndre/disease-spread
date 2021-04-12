@@ -1,12 +1,13 @@
 import pathlib
 import sqlite3
 from sqlite3 import Error
+import os
 
 
 class Database:
 
-    def __init__(self, file_name, separator):
-        self.database = str(pathlib.Path().absolute()) + separator + "data" + separator + file_name + '.db'
+    def __init__(self, file_name):
+        self.database = os.path.join(str(pathlib.Path().absolute()), "data", file_name + '.db')
         self.file_name = file_name
         self.conn = self.create_connection()
 
