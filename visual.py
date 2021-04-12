@@ -3,8 +3,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import Button
-import numpy as np
-
 
 
 class State:
