@@ -19,7 +19,7 @@ To use other databases, make sure:
 
 ## Screenshot
 
-![screenshot with got db](https://github.com/4l3x4ndre/disease-spread/screenshot.png)
+![screenshot with got db](https://github.com/4l3x4ndre/disease-spread/blob/main/screenshot.png)
 
 ## Credits
 
