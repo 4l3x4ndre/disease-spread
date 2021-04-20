@@ -1,8 +1,10 @@
 import networkx as nx
 import matplotlib as mpl
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from matplotlib.widgets import Button
+from matplotlib.widgets import Button, Slider, Rectangle
+import time
 
 
 class State:
@@ -23,6 +25,11 @@ class State:
         self.spread = spread_func
         self.spread_attributes = {'g':g, 'id':0, 'r':root, 'q':[root], 'c':[]}
 
+        # values that will be modified
+        self.init_r0 = 3
+        self.r0 = 3 
+        self.r0_delta = 3
+
         # Drawing
         self.draw()
 
@@ -40,38 +47,131 @@ class State:
 
         # Clear the figure
         plt.clf()
+        plt.subplots_adjust(top=.9, left=0.05, bottom=0, right=1)
+        
+        # Create axes in which the graph will fit
+        ax = plt.gca()
 
-        # Draw the networkx graph with the same position
+        # To have the number of cases
+        infected = self.spread_attributes['q'] + [x for x in self.spread_attributes['c'] if x not in self.spread_attributes['q']]
+
+        # Stats on the spread
+        plt.text(-.05,.2,
+                'Cases: ' + str(len(infected)) + '/' + str(len(self.g.vertices())),
+                horizontalalignment='left',
+                verticalalignment='center', 
+                color='black', 
+                transform=ax.transAxes,
+                fontsize = 15
+        )
+
+        # Text to keep track of days
+        plt.text(-.05,.15,
+            'Day: ' + str(self.index),
+            horizontalalignment='left',
+            verticalalignment='center',
+            color='r',
+            transform=ax.transAxes,
+            fontsize = 20
+        )
+
+        # Draw the networkx graph with the same position thanks to the node positions stored
         nx.draw(self.g_nx, cmap = plt.get_cmap('jet'), node_color = self.colors, with_labels=True, pos=self.pos, edge_color='#BABBC1')
     
         # Button to continue the spread ([x0, y0, width, height])
-        axnext = plt.axes([0.81, 0.05, 0.1, 0.075])
+        b_axnext = plt.axes([0.002, 0.05, 0.05, 0.025])
     
         # Reference to the button need to stay inside the class
-        self.bnext = Button(axnext, 'Next')
+        self.bnext = Button(b_axnext, 'Next')
         self.bnext.on_clicked(self.next)
-    
+
+        # Button to transit to the end
+        b_axend = plt.axes([0.002, 0.02, 0.05, 0.025])
+        #Reference to that button
+        self.bend = Button(b_axend, 'Last')
+        self.bend.on_clicked(self.last_action)
+
+        # Sliders
+        axcolor = 'lightgrey'
+        ax_r0slider = plt.axes([0.01, 0.25, 0.025, 0.3], facecolor=axcolor)
+        self.r0_slider = Slider(
+            ax=ax_r0slider,
+            label="R0",
+            valmin=0,
+            valmax=10,
+            valinit=self.r0,
+            valfmt='%0.0f',
+            valstep =1.0,
+            orientation="vertical"
+        )
+        self.r0_slider.on_changed(self.r0_changed)
+
         # Show the result
         plt.show()
     
+    def r0_changed(self, event):
+        """
+        Change the r0
+        """
+        # Converting the value of the slider in int as we need a int r0
+        self.r0 = int(self.r0_slider.val)
 
-    def next(self, event):
+        # Updating our delta: min and max infections that are possible for the same node
+        self.r0_delta = int(self.r0/2)
+
+
+    def next(self, event=None):
         """
         Continue the spread.
         """
+        # Index/day
         self.index += 1
-        print('step number', self.index)
 
-        # Contiunue the spread
+        # Continue the spread by calling the function
         self.spread_attributes = self.spread(
                 self.spread_attributes['g'],
                 self.spread_attributes['id'],
                 self.spread_attributes['r'],
+                self.r0,
+                self.r0_delta,
                 self.spread_attributes['q'],
                 self.spread_attributes['c']
         ) 
+        
+        # Debug info
+        print('############################# start checked')
+        print(self.spread_attributes['c'])
+        print('############################# start queued')
+        print(self.spread_attributes['q'])
 
+        # Drawing after update
         self.draw()
+
+
+    def last(self):
+        """
+        Go to the last cases.
+        lasttime: time in seconds of the previous call. Default is -1
+        """
+
+        # If no one left, then the spread is over
+        if len(self.spread_attributes['q']) == 0: return        
+       
+        # Proceding the next spread step
+        self.next()
+
+        # Wait 1 seconds
+        # time.sleep() can't be use, with matplotlib we need to use plt.pause(t) with t in seconds
+        plt.pause(1)
+
+        # Recursion
+        self.last()
+
+    
+    def last_action(self, event):
+        # Calling the function that recall itself
+        self.last()
+
 
 
 def show_graph(g, spread_func, root):
@@ -89,12 +189,10 @@ def show_graph(g, spread_func, root):
     )
 
     # Plot setup (height, width)
-    fig = plt.figure(figsize=(20, 10), edgecolor='y')
+    fig = plt.figure(figsize=(15, 7))
     
     # Creating an instance of State to keep track of the state of the graph
     state = State(g, g_nx, spread_func, root)
-
-    
 
 
 # What follow isn't used. It is just a basic understanding of Tkinter
