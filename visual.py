@@ -25,10 +25,22 @@ class State:
         self.spread = spread_func
         self.spread_attributes = {'g':g, 'id':0, 'r':root, 'q':[root], 'c':[]}
 
-        # values that will be modified
-        self.init_r0 = 3
+        # Infected nodes: {node_name: day of infection}
+        # With the day, we can create an immunity system
+        self.infected = {}
+
+        # Values that will be modified
         self.r0 = 3 
         self.r0_delta = 3
+        # Day to immunity (DTI)
+        self.day_to_immunity = 3
+
+        # Colors
+        self.color_pallet = {
+            "normal": "#35FFAD", # also in self.colors
+            "infected": "#FF4348",
+            "immune": "#7B02FF"
+        }
 
         # Drawing
         self.draw()
@@ -37,12 +49,23 @@ class State:
         """
         Draw the graph with the positions stored.
         """
-        # Change the color, status, ...
+        # Change the color for the checked ones
         for node_checked in self.spread_attributes['q']:
             for i in range(len(list(self.g_nx.nodes))):
                 node_nx = list(self.g_nx.nodes)[i]
                 if node_checked == node_nx:
-                    self.colors[i] = '#FF4348'
+                    self.colors[i] = self.color_pallet['infected']
+                    break
+
+        # Immune color
+        for node, d in self.infected.items():
+            # In that case, the current node is not immune yet
+            if self.index < d + self.day_to_immunity: continue
+
+            for i in range(len(list(self.g_nx.nodes))):
+                node_nx = list(self.g_nx.nodes)[i]
+                if node == node_nx:
+                    self.colors[i] = self.color_pallet['immune']
                     break
 
         # Clear the figure
@@ -91,7 +114,7 @@ class State:
         self.bend = Button(b_axend, 'Last')
         self.bend.on_clicked(self.last_action)
 
-        # Sliders
+        # r0 slider
         axcolor = 'lightgrey'
         ax_r0slider = plt.axes([0.01, 0.25, 0.025, 0.3], facecolor=axcolor)
         self.r0_slider = Slider(
@@ -106,12 +129,35 @@ class State:
         )
         self.r0_slider.on_changed(self.r0_changed)
 
+        # day to immunity slider
+        axcolor = 'lightgrey'
+        ax_dtislider = plt.axes([0.01, 0.617, 0.025, 0.3], facecolor=axcolor)
+        self.dti_slider = Slider(
+            ax=ax_dtislider,
+            label="Days\nto\nimmunity",
+            valmin=0,
+            valmax=10,
+            valinit=self.day_to_immunity,
+            valfmt='%0.0f',
+            valstep =1.0,
+            orientation="vertical"
+        )
+        self.dti_slider.on_changed(self.daytoimmunity_changed)
+
         # Show the result
         plt.show()
-    
+   
+    def daytoimmunity_changed(self, event):
+        """
+        Change the day_to_immunity.
+        Called when the slider's value change.
+        """
+        self.day_to_immunity = int(self.dti_slider.val)
+
     def r0_changed(self, event):
         """
         Change the r0
+        Called when the slider's value change.
         """
         # Converting the value of the slider in int as we need a int r0
         self.r0 = int(self.r0_slider.val)
@@ -127,7 +173,7 @@ class State:
         # Index/day
         self.index += 1
 
-        # Continue the spread by calling the function
+        # Continue the spread by calling the spread function
         self.spread_attributes = self.spread(
                 self.spread_attributes['g'],
                 self.spread_attributes['id'],
@@ -138,11 +184,28 @@ class State:
                 self.spread_attributes['c']
         ) 
         
+        # Update our infected tracker : new infected => current day
+        for n in self.spread_attributes['c'] + [n for n in self.spread_attributes['q'] if n not in self.spread_attributes['c']]:
+            if n not in self.infected:
+                self.infected[n] = self.index
+
+        # Debug infected
+        print('////////////////////////')
+        for n, d in self.infected.items():
+            print(n, d)
+        print(len(list(self.infected.keys())))
+        print('////////////////////////')
+
         # Debug info
         print('############################# start checked')
         print(self.spread_attributes['c'])
         print('############################# start queued')
         print(self.spread_attributes['q'])
+
+        # Check immunity to udpate colors
+        # self.check_immunity()
+        
+        # print("!immunity checked")
 
         # Drawing after update
         self.draw()
@@ -154,8 +217,8 @@ class State:
         lasttime: time in seconds of the previous call. Default is -1
         """
 
-        # If no one left, then the spread is over
-        if len(self.spread_attributes['q']) == 0: return        
+        # If all nodes are immune, then it's over
+        if self.color_pallet['infected'] not in self.colors and self.color_pallet['normal'] not in self.colors:return        
        
         # Proceding the next spread step
         self.next()
