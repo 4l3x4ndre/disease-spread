@@ -34,6 +34,8 @@ class State:
         self.r0_delta = 3
         # Day to immunity (DTI)
         self.day_to_immunity = 3
+        # Immunity period in days
+        self.immunity_period = 10
 
         # Colors
         self.color_pallet = {
@@ -42,6 +44,9 @@ class State:
             "immune": "#7B02FF"
         }
 
+        # General infos
+        self.is_shutdown = False
+
         # Drawing
         self.draw()
 
@@ -49,6 +54,14 @@ class State:
         """
         Draw the graph with the positions stored.
         """
+
+        # Set color to normal when the immunity is gone
+        for i in range(len(list(self.g_nx.nodes))):
+            nodex = list(self.g_nx.nodes)[i]
+            if nodex not in self.infected:
+                self.colors[i] = self.color_pallet['normal']
+
+
         # Change the color for the checked ones
         for node_checked in self.spread_attributes['q']:
             for i in range(len(list(self.g_nx.nodes))):
@@ -70,7 +83,9 @@ class State:
 
         # Clear the figure
         plt.clf()
-        plt.subplots_adjust(top=.9, left=0.05, bottom=0, right=1)
+
+        # Adjust canvas size
+        plt.subplots_adjust(top=.9, left=0.05, bottom=0, right=.95)
         
         # Create axes in which the graph will fit
         ax = plt.gca()
@@ -102,21 +117,27 @@ class State:
         nx.draw(self.g_nx, cmap = plt.get_cmap('jet'), node_color = self.colors, with_labels=True, pos=self.pos, edge_color='#BABBC1')
     
         # Button to continue the spread ([x0, y0, width, height])
-        b_axnext = plt.axes([0.002, 0.05, 0.05, 0.025])
+        b_axnext = plt.axes([0.002, 0.02, 0.05, 0.025])
     
         # Reference to the button need to stay inside the class
         self.bnext = Button(b_axnext, 'Next')
         self.bnext.on_clicked(self.next)
 
         # Button to transit to the end
-        b_axend = plt.axes([0.002, 0.02, 0.05, 0.025])
+        b_axend = plt.axes([0.002, 0.05, 0.05, 0.025])
         #Reference to that button
-        self.bend = Button(b_axend, 'Last')
+        self.bend = Button(b_axend, 'Auto')
         self.bend.on_clicked(self.last_action)
 
+        # Button to stop everything
+        b_axstop = plt.axes([0.002, 0.08, 0.05, 0.025])
+        #Reference to that button
+        self.bstop = Button(b_axstop, 'Stop')
+        self.bstop.on_clicked(self.shutdown)
+        
         # r0 slider
         axcolor = 'lightgrey'
-        ax_r0slider = plt.axes([0.01, 0.25, 0.025, 0.3], facecolor=axcolor)
+        ax_r0slider = plt.axes([0.01, 0.25, 0.015, 0.3], facecolor=axcolor)
         self.r0_slider = Slider(
             ax=ax_r0slider,
             label="R0",
@@ -131,10 +152,10 @@ class State:
 
         # day to immunity slider
         axcolor = 'lightgrey'
-        ax_dtislider = plt.axes([0.01, 0.617, 0.025, 0.3], facecolor=axcolor)
+        ax_dtislider = plt.axes([0.01, 0.617, 0.015, 0.3], facecolor=axcolor)
         self.dti_slider = Slider(
             ax=ax_dtislider,
-            label="Days\nto\nimmunity",
+            label="Infected\nperiod\n(days)",
             valmin=0,
             valmax=10,
             valinit=self.day_to_immunity,
@@ -144,9 +165,32 @@ class State:
         )
         self.dti_slider.on_changed(self.daytoimmunity_changed)
 
+        
+        # immunity period slider
+        axcolor = 'lightgrey'
+        ax_ipslider = plt.axes([1-0.035, 0.25, 0.015, 0.5], facecolor=axcolor)
+        self.ip_slider = Slider(
+            ax=ax_ipslider,
+            label="Immunity\nperdiod\n(days)",
+            valmin=0,
+            valmax=100,
+            valinit=self.immunity_period,
+            valfmt='%0.0f',
+            valstep =1.0,
+            orientation="vertical"
+        )
+        self.ip_slider.on_changed(self.immunityperiod_changed)
+
         # Show the result
         plt.show()
    
+    def immunityperiod_changed(self, event):
+        """
+        Change the immunity_period.
+        Called when the slider's value change.
+        """
+        self.immunity_period = int(self.ip_slider.val)
+
     def daytoimmunity_changed(self, event):
         """
         Change the day_to_immunity.
@@ -188,6 +232,14 @@ class State:
         for n in self.spread_attributes['c'] + [n for n in self.spread_attributes['q'] if n not in self.spread_attributes['c']]:
             if n not in self.infected:
                 self.infected[n] = self.index
+            else: 
+                # if its already infected, then check if the immune is over
+                # that's right we could have done that somewhere else
+                if self.index >= self.infected[n] + self.day_to_immunity + self.immunity_period:
+                    self.infected.pop(n)
+                    if n in self.spread_attributes['c']: self.spread_attributes['c'].remove(n)
+                    if n in self.spread_attributes['q']: self.spread_attributes['q'].remove(n)
+
 
         # Debug infected
         print('////////////////////////')
@@ -202,10 +254,6 @@ class State:
         print('############################# start queued')
         print(self.spread_attributes['q'])
 
-        # Check immunity to udpate colors
-        # self.check_immunity()
-        
-        # print("!immunity checked")
 
         # Drawing after update
         self.draw()
@@ -217,8 +265,10 @@ class State:
         lasttime: time in seconds of the previous call. Default is -1
         """
 
-        # If all nodes are immune, then it's over
-        if self.color_pallet['infected'] not in self.colors and self.color_pallet['normal'] not in self.colors:return        
+        if self.is_shutdown: return
+
+        # If no one is infected and the population ir 100% normal (or immune) then it's over
+        if self.color_pallet['infected'] not in self.colors and not (self.color_pallet['normal'] in self.colors and self.color_pallet['immune'] in self.colors): return
        
         # Proceding the next spread step
         self.next()
@@ -232,9 +282,23 @@ class State:
 
     
     def last_action(self, event):
+        """
+        Called by a button, start the automatic process.
+        """
+
+        # Allow the automatic process to happen
+        self.is_shutdown = False
+
         # Calling the function that recall itself
         self.last()
 
+
+    def shutdown(self, event):
+        """
+        Shutdown (just a value) the process.
+        """
+        print("shutting down")
+        self.is_shutdown = True
 
 
 def show_graph(g, spread_func, root):
