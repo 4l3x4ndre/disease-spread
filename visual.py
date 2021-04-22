@@ -1,5 +1,9 @@
 import networkx as nx
 import matplotlib as mpl
+
+# Use a dedicated backend to handle interactive gui
+mpl.use('TkAgg')
+
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
