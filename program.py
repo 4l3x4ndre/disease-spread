@@ -30,13 +30,12 @@ def breadth_first_search(g, root):
     return checked
 
 
-def breadth_first_search_step_by_step(g, step_id, root, r0, r0_delta, queue=[], checked=[]):
+def breadth_first_search_step_by_step(g, immune, step_id, root, r0, r0_delta, queue=[], checked=[]):
     """
     Executing a step of breadth first search from the graph g starting at root with known states queue and checked. R0 and r0_delta are used to spread the disease.
     """
-
     # Initialization
-    if queue == [] and checked == []:
+    if step_id == 0 and queue == [] and checked == []:
         queue = [root]
         checked = []
 
@@ -51,7 +50,7 @@ def breadth_first_search_step_by_step(g, step_id, root, r0, r0_delta, queue=[], 
         neighbors = g.neighbors(vertice)
 
         # Set a r0
-        random_r0 = int(random.uniform(r0_delta, r0 + r0_delta))
+        random_r0 = int(random.uniform(r0 - r0_delta, r0 + r0_delta))
         print(vertice, "r0 is", random_r0)
 
         # We check as many nodes as random_r0 allows us, but we are limited by the number of neighbors
@@ -65,7 +64,7 @@ def breadth_first_search_step_by_step(g, step_id, root, r0, r0_delta, queue=[], 
 
             # We select a random neighbors to infect
             n = neighbors_copy.pop(random.randint(0, len(neighbors_copy)-1))
-            if n not in checked and n not in new_queue:
+            if n not in checked and n not in new_queue and not n in immune:
                 new_queue.append(n)
             
 
@@ -76,7 +75,7 @@ def breadth_first_search_step_by_step(g, step_id, root, r0, r0_delta, queue=[], 
             new_queue.append(vertice)
 
         # The current vertice has been infected 
-        if vertice not in checked:
+        elif vertice not in checked:
             checked.append(vertice)
             
     return {'g':g, 'id':step_id+1, 'r':root, 'q':new_queue, 'c':checked}
