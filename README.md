@@ -7,6 +7,8 @@ Python project to visualize a virus dissemination. Work In Progress.
 
 Run `pip install -r requirements.txt`.
 
+If you use a Linux system, make sure Tkinter is installed : `sudo apt-get install python3-tk`
+
 ## Run
 
 Run `python3 program.py` to start the visualization.
