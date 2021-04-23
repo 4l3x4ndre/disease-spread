@@ -1,14 +1,27 @@
 import networkx as nx
 import matplotlib as mpl
+
+# Use a dedicated backend to handle interactive gui
+mpl.use('TkAgg')
+
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+
+# Interactive mode on
+plt.ion()
+
 from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import Button, Slider, Rectangle
 import time
+import math
+import random
 
 
 class State:
     def __init__(self, g, g_nx, spread_func, root):
+
+        # ALL THE FOLLOWING OF __INIT__ INITIALIZE VALUES
+
         self.index = 0
         self.g = g
         self.g_nx = g_nx
@@ -27,7 +40,10 @@ class State:
 
         # Infected nodes: {node_name: day of infection}
         # With the day, we can create an immunity system
-        self.infected = {}
+        self.infected = {root:0}
+
+        # Like infected but with immune
+        self.immune = {}
 
         # Values that will be modified
         self.r0 = 3 
@@ -36,89 +52,96 @@ class State:
         self.day_to_immunity = 3
         # Immunity period in days
         self.immunity_period = 10
+        # Death probability when infected
+        self.deathprob = .1
 
         # Colors
         self.color_pallet = {
             "normal": "#35FFAD", # also in self.colors
             "infected": "#FF4348",
-            "immune": "#7B02FF"
+            "immune": "#7B02FF",
+            "dead": "#000000"
         }
 
         # General infos
-        self.is_shutdown = False
+        self.is_stopped = False
+        self.is_auto = False
+        self.closing = False
+        self.change = True
+    
+        # The number of cases, updated in the 'next' method
+        self.nbcases = 1 # the first one is the root
 
-        # Drawing
-        self.draw()
-
-    def draw(self):
+    def start_loop(self):
         """
-        Draw the graph with the positions stored.
+        Start the infinite loop to handle changes and draw them
+        """
+        self.loop()
+
+    def loop(self):
+        """
+        The main loop to maintain the plt on
         """
 
-        # Set color to normal when the immunity is gone
+        # While we did not press the close button -> continue the loop
+        while not self.closing:
+            # True when pressing next
+            if self.change:
+                self.change = False
+                self.draw()
+            # True when pressing auto
+            elif self.is_auto:
+                # Check if the auto should stop
+                if not self.check_auto():
+                    self.is_auto = False
+                    continue
+                self.next()
+                self.change = False
+                self.draw()
+                plt.pause(1)
+
+            # Draw then pause
+            plt.draw()
+            plt.pause(.1)
+        
+    def set_node_colors(self):
+        """
+        Set colors according to immune/normal or infected/dead
+        """
+    
+        # immune/normal
         for i in range(len(list(self.g_nx.nodes))):
-            nodex = list(self.g_nx.nodes)[i]
-            if nodex not in self.infected:
+            nodex = list(self.g_nx.nodes)[i] # node name
+
+            # if in immune array -> node is immune
+            if nodex in self.immune:
+                self.colors[i] = self.color_pallet['immune']
+
+            # not immune and not infected ? -> normal
+            elif nodex not in self.infected:
                 self.colors[i] = self.color_pallet['normal']
 
-
-        # Change the color for the checked ones
-        for node_checked in self.spread_attributes['q']:
-            for i in range(len(list(self.g_nx.nodes))):
-                node_nx = list(self.g_nx.nodes)[i]
-                if node_checked == node_nx:
-                    self.colors[i] = self.color_pallet['infected']
-                    break
-
-        # Immune color
+        # infected/dead color
+        # Checking all the infected node in the infected dict
+            # We associate the node [dict key] to its appropriate index in the networkx graph
+        # If value is -1 -> means dead. Otherwise it is just infected
         for node, d in self.infected.items():
-            # In that case, the current node is not immune yet
-            if self.index < d + self.day_to_immunity: continue
 
-            for i in range(len(list(self.g_nx.nodes))):
-                node_nx = list(self.g_nx.nodes)[i]
-                if node == node_nx:
-                    self.colors[i] = self.color_pallet['immune']
-                    break
+            # Get the matching index
+            index_in_g_nx = list(self.g_nx.nodes).index(node)
+            
+            # Check the value of the dict then affect the matching color
+            if self.infected[node] == -1:
+                self.colors[index_in_g_nx] = self.color_pallet['dead']
+            elif node not in self.immune:
+                self.colors[index_in_g_nx] = self.color_pallet['infected']
 
-        # Clear the figure
-        plt.clf()
-
-        # Adjust canvas size
-        plt.subplots_adjust(top=.9, left=0.05, bottom=0, right=.95)
-        
-        # Create axes in which the graph will fit
-        ax = plt.gca()
-
-        # To have the number of cases
-        infected = self.spread_attributes['q'] + [x for x in self.spread_attributes['c'] if x not in self.spread_attributes['q']]
-
-        # Stats on the spread
-        plt.text(-.05,.2,
-                'Cases: ' + str(len(infected)) + '/' + str(len(self.g.vertices())),
-                horizontalalignment='left',
-                verticalalignment='center', 
-                color='black', 
-                transform=ax.transAxes,
-                fontsize = 15
-        )
-
-        # Text to keep track of days
-        plt.text(-.05,.15,
-            'Day: ' + str(self.index),
-            horizontalalignment='left',
-            verticalalignment='center',
-            color='r',
-            transform=ax.transAxes,
-            fontsize = 20
-        )
-
-        # Draw the networkx graph with the same position thanks to the node positions stored
-        nx.draw(self.g_nx, cmap = plt.get_cmap('jet'), node_color = self.colors, with_labels=True, pos=self.pos, edge_color='#BABBC1')
-    
+    def draw_buttons(self):
+        """
+        Draw all buttons in plt.
+        """ 
         # Button to continue the spread ([x0, y0, width, height])
         b_axnext = plt.axes([0.002, 0.02, 0.05, 0.025])
-    
         # Reference to the button need to stay inside the class
         self.bnext = Button(b_axnext, 'Next')
         self.bnext.on_clicked(self.next)
@@ -133,8 +156,18 @@ class State:
         b_axstop = plt.axes([0.002, 0.08, 0.05, 0.025])
         #Reference to that button
         self.bstop = Button(b_axstop, 'Stop')
-        self.bstop.on_clicked(self.shutdown)
+        self.bstop.on_clicked(self.stop)
         
+        # Button to close
+        b_axclose = plt.axes([1-0.05, 1-0.025, 0.05, 0.025])
+        #Reference to that button
+        self.bclose = Button(b_axclose, 'Close')
+        self.bclose.on_clicked(self.close)
+
+    def draw_sliders(self):
+        """
+        Draw all sliders in plt.
+        """
         # r0 slider
         axcolor = 'lightgrey'
         ax_r0slider = plt.axes([0.01, 0.25, 0.015, 0.3], facecolor=axcolor)
@@ -168,7 +201,7 @@ class State:
         
         # immunity period slider
         axcolor = 'lightgrey'
-        ax_ipslider = plt.axes([1-0.035, 0.25, 0.015, 0.5], facecolor=axcolor)
+        ax_ipslider = plt.axes([1-0.035, 0.05, 0.015, 0.3], facecolor=axcolor)
         self.ip_slider = Slider(
             ax=ax_ipslider,
             label="Immunity\nperdiod\n(days)",
@@ -180,10 +213,71 @@ class State:
             orientation="vertical"
         )
         self.ip_slider.on_changed(self.immunityperiod_changed)
+        
+        # death probability slider
+        axcolor = 'lightgrey'
+        ax_dpslider = plt.axes([1-0.035, 0.5, 0.015, 0.2], facecolor=axcolor)
+        self.dp_slider = Slider(
+            ax=ax_dpslider,
+            label="Immunity\nperdiod\n(days)",
+            valmin=0,
+            valmax=1,
+            valinit=self.deathprob,
+            valstep=.001,
+            orientation="vertical"
+        )
+        self.dp_slider.on_changed(self.deathproba_changed)
 
-        # Show the result
-        plt.show()
-   
+    def draw_texts(self, ax):
+        """
+        Draw all texts in plt.
+        ax: the plot ax
+        """
+
+        # Stats on the spread
+        plt.text(-.05,.2,
+                'Cases: ' + str(self.nbcases) + '/' + str(len(self.g.vertices())),
+                horizontalalignment='left',
+                verticalalignment='center', 
+                color='black', 
+                transform=ax.transAxes,
+                fontsize = 15
+        )
+
+        # Text to keep track of days
+        plt.text(-.05,.15,
+            'Day: ' + str(self.index),
+            horizontalalignment='left',
+            verticalalignment='center',
+            color='r',
+            transform=ax.transAxes,
+            fontsize = 20
+        )
+
+    def draw(self):
+        """
+        Draw the graph with the positions stored as well as buttons/texts/sliders.
+        """
+        
+        # Set the appropriate color for each node according to its state(immune, infected, ...) to then draw the graph
+        self.set_node_colors()
+
+        # Clear the figure
+        plt.clf()
+
+        # Create axes in which the graph will fit
+        ax = plt.gca()        
+
+        # Adjust canvas size
+        plt.subplots_adjust(top=.9, left=0.05, bottom=0, right=.95) 
+ 
+        # Draw the networkx graph with the same position thanks to the node positions stored
+        nx.draw(self.g_nx, cmap = plt.get_cmap('jet'), node_color = self.colors, with_labels=True, pos=self.pos, edge_color='#BABBC1')
+        
+        self.draw_texts(ax)
+        self.draw_buttons()
+        self.draw_sliders()
+
     def immunityperiod_changed(self, event):
         """
         Change the immunity_period.
@@ -218,28 +312,75 @@ class State:
         self.index += 1
 
         # Continue the spread by calling the spread function
-        self.spread_attributes = self.spread(
+        r = self.spread(
                 self.spread_attributes['g'],
-                self.spread_attributes['id'],
+                self.immune,
+                self.index,
                 self.spread_attributes['r'],
                 self.r0,
                 self.r0_delta,
                 self.spread_attributes['q'],
-                self.spread_attributes['c']
-        ) 
+                self.spread_attributes['c'],
+        )
+        self.spread_attributes['q'] = r['q']
+        self.spread_attributes['c'] = r['c']
         
-        # Update our infected tracker : new infected => current day
+        # Update our infected tracker : new infected => current day or dead
         for n in self.spread_attributes['c'] + [n for n in self.spread_attributes['q'] if n not in self.spread_attributes['c']]:
-            if n not in self.infected:
-                self.infected[n] = self.index
-            else: 
-                # if its already infected, then check if the immune is over
-                # that's right we could have done that somewhere else
-                if self.index >= self.infected[n] + self.day_to_immunity + self.immunity_period:
-                    self.infected.pop(n)
-                    if n in self.spread_attributes['c']: self.spread_attributes['c'].remove(n)
-                    if n in self.spread_attributes['q']: self.spread_attributes['q'].remove(n)
+            if n not in self.infected and n not in self.immune:
+                # Vital prognosis engaged                
+                if random.random() <= self.deathprob:
+                    print(n, "just died")
+                    # -1 means dead
+                    self.infected[n] = -1
+                    if n in self.spread_attributes['c']: 
+                        c = self.spread_attributes['c'].copy()
+                        c.remove(n)
+                        self.spread_attributes['c'] = c.copy()
+                    if n in self.spread_attributes['q']:
+                        c = self.spread_attributes['q'].copy()
+                        c.remove(n)
+                        self.spread_attributes['q'] = c.copy()
+                else:
+                    self.infected[n] = self.index
+                    self.nbcases += 1
+            elif n in self.infected and self.infected[n] == -1:
+                if n in self.spread_attributes['c']: 
+                    c = self.spread_attributes['c'].copy()
+                    c.remove(n)
+                    self.spread_attributes['c'] = c.copy()
+                if n in self.spread_attributes['q']:
+                    c = self.spread_attributes['q'].copy()
+                    c.remove(n)
+                    self.spread_attributes['q'] = c.copy()
 
+
+        infected_to_remove = []
+        for n, d in self.infected.items():
+            if d != -1 and self.index >= d + self.day_to_immunity:
+                if n in self.spread_attributes['c']: 
+                    c = self.spread_attributes['c'].copy()
+                    c.remove(n)
+                    self.spread_attributes['c'] = c.copy()
+                if n in self.spread_attributes['q']:
+                    c = self.spread_attributes['q'].copy()
+                    c.remove(n)
+                    self.spread_attributes['q'] = c.copy()
+                self.nbcases -= 1
+                self.immune[n] = self.index
+                infected_to_remove.append(n)
+
+        for n in infected_to_remove:
+            self.infected.pop(n)
+
+        immunity_to_remove = []
+        for n, d in self.immune.items():
+            if self.index >= d + self.day_to_immunity + self.immunity_period:
+                immunity_to_remove.append(n)
+
+        for n in immunity_to_remove:
+            self.immune.pop(n)
+        
 
         # Debug infected
         print('////////////////////////')
@@ -248,37 +389,20 @@ class State:
         print(len(list(self.infected.keys())))
         print('////////////////////////')
 
+        print('~~~~~~~~~~~~~~~~~~~~~')
+        for n, d in self.immune.items():
+            print(n, d)
+        print('~~~~~~~~~~~~~~~~~~~~~')
+
         # Debug info
         print('############################# start checked')
         print(self.spread_attributes['c'])
         print('############################# start queued')
         print(self.spread_attributes['q'])
 
+        # Make it possible to the loop to detect changed        
+        self.change = True
 
-        # Drawing after update
-        self.draw()
-
-
-    def last(self):
-        """
-        Go to the last cases.
-        lasttime: time in seconds of the previous call. Default is -1
-        """
-
-        if self.is_shutdown: return
-
-        # If no one is infected and the population ir 100% normal (or immune) then it's over
-        if self.color_pallet['infected'] not in self.colors and not (self.color_pallet['normal'] in self.colors and self.color_pallet['immune'] in self.colors): return
-       
-        # Proceding the next spread step
-        self.next()
-
-        # Wait 1 seconds
-        # time.sleep() can't be use, with matplotlib we need to use plt.pause(t) with t in seconds
-        plt.pause(1)
-
-        # Recursion
-        self.last()
 
     
     def last_action(self, event):
@@ -286,20 +410,39 @@ class State:
         Called by a button, start the automatic process.
         """
 
-        # Allow the automatic process to happen
-        self.is_shutdown = False
+        # We launch the automatic by unstopping it then activate it
+        self.is_stopped = False
+        self.is_auto = True
 
-        # Calling the function that recall itself
-        self.last()
+    def check_auto(self):
+        # If no one is infected and the population ir 100% normal (or immune) then it's over
+        if self.color_pallet['infected'] not in self.colors and not (self.color_pallet['normal'] in self.colors and self.color_pallet['immune'] in self.colors): return False
+        return True
 
 
-    def shutdown(self, event):
+    def stop(self, event):
         """
         Shutdown (just a value) the process.
         """
-        print("shutting down")
-        self.is_shutdown = True
+        print("stop auto")
+        self.is_stopped = True
+        self.is_auto = False
 
+    def deathproba_changed(self, event):
+        """
+        Call when the slider's value changed.
+        """
+        self.deathprob = self.dp_slider.val
+
+    def close(self, event):
+        """
+        Close the windows.
+        Called by a button.
+        """
+        self.closing = True
+        self.is_auto = False
+        plt.close('all')
+    
 
 def show_graph(g, spread_func, root):
 
@@ -320,42 +463,6 @@ def show_graph(g, spread_func, root):
     
     # Creating an instance of State to keep track of the state of the graph
     state = State(g, g_nx, spread_func, root)
+    state.start_loop()
 
 
-# What follow isn't used. It is just a basic understanding of Tkinter
-'''
-from tkinter import *
-def test_with_tkinter(g):
-    window = Tk()
-    window.geometry("2500x750")
-    
-    # Label is the title inside the window
-    label = Label(window, text="Disease Spread")
-    label.pack()
-    
-    
-    canvas = Canvas(window, width=450, height=400, bg='ivory')
-
-    # Graph creation
-    n = g.nb_neighbors()
-    
-    # Dot size
-    padding = 5
-    canvas_padding = 10
-    window.update()
-    ds = (window.winfo_width()-4*canvas_padding)/(n+padding)
-    for i in range(n):
-        x, y = canvas_padding + i*(ds+padding), 50
-        canvas.create_oval(x, y, x+ds, y+ds, fill='green')
-    
-    
-
-
-    # End graph creation
-
-    canvas.pack(side=TOP, padx=canvas_padding, pady=canvas_padding, fill=BOTH, expand=YES)
-    
-    Button(window, text ='Next').pack(side=LEFT, padx=5, pady=5)
-   
-    window.mainloop()
-'''
