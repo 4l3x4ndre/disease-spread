@@ -6,6 +6,9 @@ mpl.use('TkAgg')
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+
+plt.ion()
+
 from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import Button, Slider, Rectangle
 import time
@@ -58,6 +61,7 @@ class State:
 
         # General infos
         self.is_shutdown = False
+        self.is_auto = False
 
         # The number of cases, updated in the 'next' method
         self.nbcases = 1 # the first one is the root
@@ -143,6 +147,12 @@ class State:
         self.bstop = Button(b_axstop, 'Stop')
         self.bstop.on_clicked(self.shutdown)
         
+        # Button to close
+        b_axclose = plt.axes([1-0.05, 1-0.025, 0.05, 0.025])
+        #Reference to that button
+        self.bclose = Button(b_axclose, 'Close')
+        self.bclose.on_clicked(self.close)
+        
         # r0 slider
         axcolor = 'lightgrey'
         ax_r0slider = plt.axes([0.01, 0.25, 0.015, 0.3], facecolor=axcolor)
@@ -204,8 +214,13 @@ class State:
         self.dp_slider.on_changed(self.deathproba_changed)
 
         # Show the result
-        plt.show()
-   
+        plt.draw()
+        plt.pause(.1)
+        while not self.is_auto:
+            plt.waitforbuttonpress()
+            plt.draw()
+            plt.pause(.1)
+
     def immunityperiod_changed(self, event):
         """
         Change the immunity_period.
@@ -373,7 +388,7 @@ class State:
 
         # Allow the automatic process to happen
         self.is_shutdown = False
-
+        self.is_auto = True
         # Calling the function that recall itself
         self.last()
 
@@ -384,6 +399,7 @@ class State:
         """
         print("shutting down")
         self.is_shutdown = True
+        self.is_auto = False
 
     def deathproba_changed(self, event):
         """
@@ -391,6 +407,14 @@ class State:
         """
         self.deathprob = self.dp_slider.val
 
+    def close(self, event):
+        """
+        Close the windows.
+        Called by a button.
+        """
+        self.is_auto = True
+        plt.close('all')
+    
 
 def show_graph(g, spread_func, root):
 
