@@ -65,4 +65,3 @@ class Database:
         cur = self.conn.cursor()
         cur.execute(sql, (value, name))
         self.conn.commit()
-
