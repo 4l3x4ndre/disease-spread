@@ -5,8 +5,9 @@ import random
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-t', type=float, default=1, help='auto animation time')
-
+parser.add_argument('-animt', type=float, default=1, help='auto animation time')
+parser.add_argument('-root', type=str, default='', help='root: the firt infected')
+parser.add_argument('-db', type=str, default='got', help='database: accept : got / trump / marvel')
 
 def create_graph(vertices_db, edges_db):
     g = graph.Graph_dic()
@@ -71,15 +72,10 @@ def breadth_first_search_step_by_step(g, immune, step_id, root, r0, r0_delta, qu
             if n not in checked and n not in new_queue and not n in immune:
                 new_queue.append(n)
 
-                # If r0 < len(neighbors), then some neighbors could be infected later,
-            # so we need to keep the current vertice to check the neighbors later
-        # So we add it to the queue, checking it at the next call of the function
-        # But we only do that if some neighbors aren't infected, so we can infect them later on
-        if random_r0 < len(neighbors) and \
-                len([x for x in neighbors if x in checked or x in queue]) != len(neighbors) and \
-                vertice not in new_queue:
+        # Add the vertice to the queue because it can infect other nodes
+        # It will be remove when needed by the Next function of visual.py
+        if not vertice in new_queue:
             new_queue.append(vertice)
-
         # The current vertice has been infected 
         elif vertice not in checked:
             checked.append(vertice)
@@ -88,21 +84,36 @@ def breadth_first_search_step_by_step(g, immune, step_id, root, r0, r0_delta, qu
 
 
 def main():
+    # Get arguments
+    args = parser.parse_args()
+
     # Load the two main databases from which we create the graph
-    vert_db = db.Database('got_vertices')
-    edges_db = db.Database('got_edges')
+    db_name = args.db
+    if db_name == 'got':
+        vert_db = db.Database('got_vertices')
+        edges_db = db.Database('got_edges')
+    elif db_name == 'trump':
+        vert_db = db.Database('trump_vertices')
+        edges_db = db.Database('trump_edges')
+    elif db_name == 'marvel':
+        vert_db = db.Database('marvel_vertices')
+        edges_db = db.Database('marvel_edges')
+    else:
+        vert_db = db.Database(db_name + '_vertices')
+        edges_db = db.Database(db_name + '_edges')
+
 
     # Create the graph
     g = create_graph(vert_db, edges_db)
 
     # The root is the starting point of the spread
-    root = 'Aemon'
-
-    # Get arguments
-    args = parser.parse_args()
+    # if None, get a random starting point
+    root = args.root
+    if root == '':
+        root = g.vertices()[random.randin(0, len(g.vertices())-1)]
 
     # Start the GUI process to render the spread
-    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.t))
+    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animt))
 
 
 if __name__ == '__main__':

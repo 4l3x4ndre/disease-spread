@@ -411,7 +411,7 @@ class State:
         # 1. select
         immunity_to_remove = []
         for n, d in self.immune.items():
-            if self.index >= d + self.day_to_immunity + self.immunity_period:
+            if self.index >= d + self.immunity_period:
                 immunity_to_remove.append(n)
 
         # 2. remove
