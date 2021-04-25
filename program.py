@@ -110,7 +110,7 @@ def main():
     # if None, get a random starting point
     root = args.root
     if root == '':
-        root = g.vertices()[random.randin(0, len(g.vertices())-1)]
+        root = g.vertices()[random.randint(0, len(g.vertices())-1)]
 
     # Start the GUI process to render the spread
     gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animt))
