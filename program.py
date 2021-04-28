@@ -4,10 +4,10 @@ import visual as gui
 import random
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-animt', type=float, default=1, help='auto animation time')
-parser.add_argument('-root', type=str, default='', help='root: the firt infected')
-parser.add_argument('-db', type=str, default='got', help='database: accept : got / trump / marvel')
+parser = argparse.ArgumentParser(description='Start a vizualisation of a virus spread', epilog='Any questions? Refers to the GitHub page for information and contact')
+parser.add_argument('-t', '--animationtime', type=float, default=1, help='auto animation time')
+parser.add_argument('-r', '--root', type=str, default='', help='the firt infected node. Default is random')
+parser.add_argument('-db', '--database', type=str, default='got', help='Default accept: got / trump / marvel. Refer to the GitHub page.')
 
 def create_graph(vertices_db, edges_db):
     g = graph.Graph_dic()
@@ -87,8 +87,12 @@ def main():
     # Get arguments
     args = parser.parse_args()
 
+    # Show the usage of the command if no options were used
+    if args.database == 'got' and args.root == '' and args.animationtime==1:
+        print(parser.print_help())
+
     # Load the two main databases from which we create the graph
-    db_name = args.db
+    db_name = args.database
     if db_name == 'got':
         vert_db = db.Database('got_vertices')
         edges_db = db.Database('got_edges')
@@ -113,7 +117,7 @@ def main():
         root = g.vertices()[random.randint(0, len(g.vertices())-1)]
 
     # Start the GUI process to render the spread
-    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animt))
+    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animationtime))
 
 
 if __name__ == '__main__':
