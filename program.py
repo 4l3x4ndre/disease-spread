@@ -1,6 +1,7 @@
 import database as db
 import graph
 import visual as gui
+import chart
 import random
 import argparse
 
@@ -116,8 +117,11 @@ def main():
     if root == '':
         root = g.vertices()[random.randint(0, len(g.vertices())-1)]
 
+    # Chart to plot spread numbers
+    chart_instance = chart.Chart()
+
     # Start the GUI process to render the spread
-    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animationtime))
+    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animationtime), chart_instance)
 
 
 if __name__ == '__main__':

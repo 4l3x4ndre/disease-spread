@@ -13,7 +13,7 @@ plt.ion()
 
 
 class State:
-    def __init__(self, g, g_nx, spread_func, root, anim_time):
+    def __init__(self, g, g_nx, spread_func, root, anim_time, chart):
 
         # ALL THE FOLLOWING OF __INIT__ INITIALIZES VALUES
 
@@ -71,6 +71,9 @@ class State:
         self.nbcases = 1  # the first one is the root
         self.nbdead = 0 
 
+        # Chart to plot spread numbers
+        self.chart = chart
+
     def start_loop(self):
         """
         Start the infinite loop to handle changes and draw them
@@ -102,6 +105,13 @@ class State:
             # Draw then pause
             plt.draw()
             plt.pause(.5)
+
+    def update_chart(self, x, y):
+        """
+        Call chart functions to upadte the chart
+        """
+        self.chart.add_values(x, y)
+
 
     def set_node_colors(self):
         """
@@ -427,6 +437,9 @@ class State:
         # Make it possible to the loop to detect changed        
         self.change = True
 
+        # Update chart to display new spread numbers
+        self.update_chart(self.index, self.nbcases)
+
     def last_action(self, event):
         """
         Called by a button, start the automatic process.
@@ -466,7 +479,7 @@ class State:
         plt.close('all')
 
 
-def show_graph(g, spread_func, root, animation_time):
+def show_graph(g, spread_func, root, animation_time, chart):
     """
     Display the graph
     Called from program.py
@@ -486,5 +499,5 @@ def show_graph(g, spread_func, root, animation_time):
     fig = plt.figure(figsize=(15, 7))
 
     # Creating an instance of State to keep track of the state of the graph
-    state = State(g, g_nx, spread_func, root, animation_time)
+    state = State(g, g_nx, spread_func, root, animation_time, chart)
     state.start_loop()
