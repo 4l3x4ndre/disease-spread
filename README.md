@@ -33,7 +33,7 @@ To use other databases, make sure:
 
 ## Screenshot
 
-![screenshot with got db](screenshot.gif)
+![screenshot with got db](anim.gif)
 
 ## Credits
 
