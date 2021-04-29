@@ -42,8 +42,6 @@ class Chart:
         Add values to the plot
         """
 
-        print('#####', day, total, daily)
-
         # we add data in x => numpy append: (the_array, the_value)
         self.daily_p.set_xdata(numpy.append(self.daily_p.get_xdata(), day))
 	# Same on y axis
