@@ -106,11 +106,13 @@ class State:
             plt.draw()
             plt.pause(.5)
 
-    def update_chart(self, x, y):
+    def update_chart(self, day, total, daily, dead, immune):
         """
         Call chart functions to upadte the chart
+        day: the index of the current day
+        other params: spread numbers
         """
-        self.chart.add_values(x, y)
+        self.chart.add_values(day, total, daily, dead, immune)
 
 
     def set_node_colors(self):
@@ -353,6 +355,9 @@ class State:
         self.spread_attributes['q'] = r['q']
         self.spread_attributes['c'] = r['c']
 
+        # Case of the day (used in the chart)
+        daily_cases = 0
+
         # Update our infected tracker : new infected => current day or dead
         for n in self.spread_attributes['c'] + [n for n in self.spread_attributes['q'] if
                                                 n not in self.spread_attributes['c']]:
@@ -380,6 +385,9 @@ class State:
                 else:
                     self.infected[n] = self.index
                     self.nbcases += 1
+
+                    # A new infected today
+                    daily_cases += 1
 
             # Remove dead nodes from algorithm parameters
             elif n in self.infected and self.infected[n] == -1:
@@ -438,7 +446,7 @@ class State:
         self.change = True
 
         # Update chart to display new spread numbers
-        self.update_chart(self.index, self.nbcases)
+        self.update_chart(self.index, self.nbcases, daily_cases, self.nbdead, len(list(self.immune.keys())))
 
     def last_action(self, event):
         """

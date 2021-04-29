@@ -29,18 +29,35 @@ class Chart:
 
         # plt.plot() return a tuple
         # at start: 1 infected <=> day 0: 1 <=> [0], [1]
-        self.hl, = plt.plot([0], [1])
+        self.total_p, = plt.plot([0], [1], color='r')
+        self.daily_p, = plt.plot([0], [1], color='y')
+        self.dead_p, = plt.plot([0], [0], color='black')
+        self.immune_p, = plt.plot([0], [0], color='magenta')
 
-    def add_values(self, x, y):
+        # Legend on the upper left corner
+        plt.legend(['total', 'daily', 'dead', 'immune'], loc='upper left')
+
+    def add_values(self, day, total, daily, dead, immune):
         """
         Add values to the plot
         """
-        # we add data in x => numpy append: (the_array, the_value)
-        self.hl.set_xdata(numpy.append(self.hl.get_xdata(), x))
 
+        print('#####', day, total, daily)
+
+        # we add data in x => numpy append: (the_array, the_value)
+        self.daily_p.set_xdata(numpy.append(self.daily_p.get_xdata(), day))
 	# Same on y axis
-        self.hl.set_ydata(numpy.append(self.hl.get_ydata(), y))
+        self.daily_p.set_ydata(numpy.append(self.daily_p.get_ydata(), daily))
     
+        self.total_p.set_xdata(numpy.append(self.total_p.get_xdata(), day))
+        self.total_p.set_ydata(numpy.append(self.total_p.get_ydata(), total))
+
+        self.dead_p.set_xdata(numpy.append(self.dead_p.get_xdata(), day))
+        self.dead_p.set_ydata(numpy.append(self.dead_p.get_ydata(), dead))
+        
+        self.immune_p.set_xdata(numpy.append(self.immune_p.get_xdata(), day))
+        self.immune_p.set_ydata(numpy.append(self.immune_p.get_ydata(), immune))
+
         self.draw()
 
     def draw(self):
