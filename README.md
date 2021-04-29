@@ -17,11 +17,11 @@ Warning: to close the window and stop the program, use the *close* button and **
 
 ### Command line options
 
-- `-animt` sets the animation time = time between frames with a float. `-animt 0.25`
-- `-root` is used to defined the root / starting point of the spread with a string: `-root a_node_name`
+- `-t` sets the animation time = time between frames with a float. `-t 0.25`
+- `-r` is used to defined the root / starting point of the spread with a string: `-r a_node_name`
 - `-db` is used to set the database filename with a string. 3 defaults possibilities: trump, got, marvel : `-db trump` (the default one is got)
 
-Full example : `python3 program.py -animt .25 -db trump -root Donald\ J.\ Trump` 
+Full example : `python3 program.py -t .25 -db trump -r Donald\ J.\ Trump` 
 
 ## Customise
 
