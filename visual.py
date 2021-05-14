@@ -13,7 +13,7 @@ plt.ion()
 
 
 class State:
-    def __init__(self, g, g_nx, spread_func, root, anim_time, chart):
+    def __init__(self, g, g_nx, spread_func, root, anim_time, chart, lockdown):
 
         # ALL THE FOLLOWING OF __INIT__ INITIALIZES VALUES
 
@@ -40,11 +40,14 @@ class State:
         # Like infected but with immune
         self.immune = {}
 
+        # Nodes under lockdown
+        self.locked = {}
+
         # Values that will be modified
         self.r0 = 3
         self.r0_delta = 3
         # Day to immunity (DTI)
-        self.day_to_immunity = 3
+        self.day_to_immunity = 5
         # Immunity period in days
         self.immunity_period = 10
         # Death probability when infected
@@ -55,7 +58,8 @@ class State:
             "normal": "#35FFAD",  # also in self.colors
             "infected": "#FF4348",
             "immune": "#7B02FF",
-            "dead": "#000000"
+            "dead": "#000000",
+            "lockdown" : "#A19DA4"
         }
 
         # General infos
@@ -63,6 +67,7 @@ class State:
         self.is_auto = False
         self.closing = False
         self.change = True
+        self.lockdown = lockdown
 
         # Time between frames
         self.anim_time = anim_time
@@ -127,11 +132,18 @@ class State:
             # if in immune array -> node is immune
             if nodex in self.immune:
                 self.colors[i] = self.color_pallet['immune']
-
-            # not immune and not infected ? -> normal
-            elif nodex not in self.infected:
+            # if under lockdown
+            elif nodex in self.locked:
+                self.colors[i] = self.color_pallet['lockdown']
+            elif nodex in self.infected:
+                if self.infected[nodex] == -1:
+                    self.colors[i] = self.color_pallet['dead']
+                else:
+                    self.colors[i] = self.color_pallet['infected']
+            else:
                 self.colors[i] = self.color_pallet['normal']
-
+        
+        '''
         # infected/dead color
         # Checking all the infected node in the infected dict
         # We associate the node [dict key] to its appropriate index in the networkx graph
@@ -146,6 +158,7 @@ class State:
                 self.colors[index_in_g_nx] = self.color_pallet['dead']
             elif node not in self.immune:
                 self.colors[index_in_g_nx] = self.color_pallet['infected']
+        '''
 
     def draw_buttons(self):
         """
@@ -177,7 +190,7 @@ class State:
 
     def draw_sliders(self):
         """
-        Draw all sliders in plt.
+        raw all sliders in plt.
         """
         # r0 slider
         axcolor = 'lightgrey'
@@ -344,6 +357,7 @@ class State:
         # Continue the spread by calling the spread function
         r = self.spread(
             self.spread_attributes['g'],
+            self.locked,
             self.immune,
             self.index,
             self.spread_attributes['r'],
@@ -406,7 +420,22 @@ class State:
         # 1. select them
         infected_to_remove = []
         for n, d in self.infected.items():
-            if d != -1 and self.index >= d + self.day_to_immunity:
+            # lockdown enabled
+            if self.lockdown != -1 and d != -1 and self.index >= d + self.lockdown:
+                if n in self.spread_attributes['c']:
+                    c = self.spread_attributes['c'].copy()
+                    c.remove(n)
+                    self.spread_attributes['c'] = c.copy()
+                if n in self.spread_attributes['q']:
+                    c = self.spread_attributes['q'].copy()
+                    c.remove(n)
+                    self.spread_attributes['q'] = c.copy()
+                # We set the lock date to the infection date. Thus, we keep track of when the node was infected
+                # and not only when it was locked
+                self.locked[n] = self.infected[n]
+                infected_to_remove.append(n)
+            # immune
+            elif (self.lockdown == -1 and d != -1 and self.index >= d + self.day_to_immunity):
                 if n in self.spread_attributes['c']:
                     c = self.spread_attributes['c'].copy()
                     c.remove(n)
@@ -418,6 +447,7 @@ class State:
                 self.nbcases -= 1
                 self.immune[n] = self.index
                 infected_to_remove.append(n)
+
 
         # 2. remove them
         for n in infected_to_remove:
@@ -435,6 +465,23 @@ class State:
         # 2. remove
         for n in immunity_to_remove:
             self.immune.pop(n)
+
+        # unlock locked nodes
+        node_to_unlock = []
+        for key, value in self.locked.items():
+            if self.index >= self.day_to_immunity + value:
+                print('!!!!!', key)
+                node_to_unlock.append(key)
+                self.immune[key] = self.index
+                self.nbcases -= 1
+
+        for n in node_to_unlock:
+            self.locked.pop(n)
+
+        print('--')
+        for k, v in self.locked.items():
+            print(k, v)
+        print('--')
 
         # Infos 
         print('+++++Nb Info:', self.nbcases, 'infected')
@@ -487,7 +534,7 @@ class State:
         plt.close('all')
 
 
-def show_graph(g, spread_func, root, animation_time, chart):
+def show_graph(g, spread_func, root, animation_time, chart, lockdown):
     """
     Display the graph
     Called from program.py
@@ -507,5 +554,5 @@ def show_graph(g, spread_func, root, animation_time, chart):
     fig = plt.figure(figsize=(15, 7))
 
     # Creating an instance of State to keep track of the state of the graph
-    state = State(g, g_nx, spread_func, root, animation_time, chart)
+    state = State(g, g_nx, spread_func, root, animation_time, chart, lockdown)
     state.start_loop()
