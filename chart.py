@@ -29,10 +29,10 @@ class Chart:
 
         # plt.plot() return a tuple
         # at start: 1 infected <=> day 0: 1 <=> [0], [1]
-        self.total_p, = plt.plot([0], [1], color='r')
+        self.total_p, = plt.plot([0], [1], color='#FF4348')
         self.daily_p, = plt.plot([0], [1], color='y')
-        self.dead_p, = plt.plot([0], [0], color='black')
-        self.immune_p, = plt.plot([0], [0], color='magenta')
+        self.dead_p, = plt.plot([0], [0], color='#000000')
+        self.immune_p, = plt.plot([0], [0], color='#7B02FF')
 
         # Legend on the upper left corner
         plt.legend(['total', 'daily', 'dead', 'immune'], loc='upper left')

@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser(description='Start a vizualisation of a virus s
 parser.add_argument('-t', '--animationtime', type=float, default=1, help='auto animation time')
 parser.add_argument('-r', '--root', type=str, default='', help='the firt infected node. Default is random')
 parser.add_argument('-db', '--database', type=str, default='got', help='Default accept: got / trump / marvel. Refer to the GitHub page.')
+parser.add_argument('-l', '--lockdown', type=int, default=-1, help='Number of days between infection day and start of lockdown. By default lockdown is disable.')
 
 def create_graph(vertices_db, edges_db):
     g = graph.Graph_dic()
@@ -35,7 +36,7 @@ def breadth_first_search(g, root):
     return checked
 
 
-def breadth_first_search_step_by_step(g, immune, step_id, root, r0, r0_delta, queue=[], checked=[]):
+def breadth_first_search_step_by_step(g, locked, immune, step_id, root, r0, r0_delta, queue=[], checked=[]):
     """
     Executing a step of breadth first search from the graph g starting at root with known states queue and checked.
     R0 and r0_delta are used to spread the disease.
@@ -70,7 +71,7 @@ def breadth_first_search_step_by_step(g, immune, step_id, root, r0, r0_delta, qu
 
             # We select a random neighbors to infect
             n = neighbors_copy.pop(random.randint(0, len(neighbors_copy) - 1))
-            if n not in checked and n not in new_queue and not n in immune:
+            if n not in checked and n not in new_queue and not n in immune and not n in locked:
                 new_queue.append(n)
 
         # Add the vertice to the queue because it can infect other nodes
@@ -121,7 +122,7 @@ def main():
     chart_instance = chart.Chart()
 
     # Start the GUI process to render the spread
-    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animationtime), chart_instance)
+    gui.show_graph(g, breadth_first_search_step_by_step, root, abs(args.animationtime), chart_instance, args.lockdown)
 
 
 if __name__ == '__main__':
