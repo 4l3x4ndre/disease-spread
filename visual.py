@@ -55,7 +55,7 @@ class State:
 
         # Colors
         self.color_pallet = {
-            "normal": "#35FFAD",  # also in self.colors
+            "normal": "#35FFAD",
             "infected": "#FF4348",
             "immune": "#7B02FF",
             "dead": "#000000",
@@ -143,22 +143,6 @@ class State:
             else:
                 self.colors[i] = self.color_pallet['normal']
         
-        '''
-        # infected/dead color
-        # Checking all the infected node in the infected dict
-        # We associate the node [dict key] to its appropriate index in the networkx graph
-        # If value is -1 -> means dead. Otherwise it is just infected
-        for node, d in self.infected.items():
-
-            # Get the matching index
-            index_in_g_nx = list(self.g_nx.nodes).index(node)
-
-            # Check the value of the dict then affect the matching color
-            if self.infected[node] == -1:
-                self.colors[index_in_g_nx] = self.color_pallet['dead']
-            elif node not in self.immune:
-                self.colors[index_in_g_nx] = self.color_pallet['infected']
-        '''
 
     def draw_buttons(self):
         """
