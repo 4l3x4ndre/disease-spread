@@ -22,8 +22,7 @@ class State:
         self.g_nx = g_nx
         self.root = root
 
-        # Positions of the nodes to keep them in the same place and not
-        # redraw completely the graph
+        # Positions of the nodes to keep them in the same place and not redraw completely the graph each time
         self.pos = nx.fruchterman_reingold_layout(self.g_nx)
 
         # Keep track of graph colors
@@ -118,7 +117,6 @@ class State:
         other params: spread numbers
         """
         self.chart.add_values(day, total, daily, dead, immune)
-
 
     def set_node_colors(self):
         """
