@@ -13,8 +13,8 @@ plt.ioff()
 class Chart:
 
     def __init__(self):
-        # Figure to draw on
-        self.figure = plt.figure()
+        # Figure to draw on, its id is 1
+        self.figure = plt.figure(num=1)
 
         # Axes of the chart (used later to specify autoscale)
         self.ax = plt.gca()
@@ -25,11 +25,19 @@ class Chart:
         # Initialization & drawing
         self.setup_chart()
         self.draw()
+        
+        # Draw !
+        # Switching to figure n°1
+        plt.figure(num=1)
+        plt.draw()
 
     def setup_chart(self):
         """
         Initialization of needed chart values
         """
+
+        # Switching to figure n°1
+        plt.figure(num=1)
 
         # Auto scale axes to fit the curves
         self.ax.set_autoscale_on(True)
@@ -64,6 +72,9 @@ class Chart:
         -------
 
         """
+        
+        # Switching to figure n°1
+        plt.figure(num=1)
 
         # We add data in x => numpy.append: (the_array, the_value)
         # Same on y axis
@@ -94,4 +105,6 @@ class Chart:
         self.ax.autoscale_view(True, True, True)
 
         # Draw !
+        # Switching to figure n°1
+        plt.figure(1)
         plt.draw()
