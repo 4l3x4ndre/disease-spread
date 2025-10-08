@@ -1,6 +1,6 @@
 # DISEASE SPREAD
 
-Python project to visualize a virus dissemination. Work In Progress.
+Python project to visualize a virus dissemination.
 
 
 ## Insallation
